@@ -5,6 +5,11 @@ import java.util.Iterator;
 import java.util.Stack;
 import java.util.Queue;
 import java.util.LinkedList;
+import java.util.Deque;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.List;
+
 
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
@@ -12,14 +17,6 @@ import org.graphstream.graph.Edge;
 import org.graphstream.graph.implementations.SingleGraph;
 
 
-/**
- * Lab 2 algorithms required for submission:
- *  - Dijkstra (weighted shortest paths)
- *  - Eccentricities (per node), plus graph Diameter & Radius
- *  - Eccentricity heatmap (blue→red)
- *
- * This class is intentionally minimal and self-contained.
- */
 public class TraversalAlgorithms {
 
     /** Holder for diameter & radius. */
@@ -191,4 +188,96 @@ public class TraversalAlgorithms {
             }
         }
     }
+
+    public static void bfsEvolution(Graph g, Node source, int delayMs) {
+        // wyczyść poprzednie oznaczenia
+        for (Node n : g) {
+            n.removeAttribute("visited");
+            n.removeAttribute("ui.class");
+        }
+        for (Edge e : g.edges().toList()) {    // <— WSZYSTKIE krawędzie, tylko do resetu
+            e.removeAttribute("ui.class");
+        }
+
+        // kolejka jako ArrayList (zgodnie z poleceniem)
+        ArrayList<Node> q = new ArrayList<>();
+        int head = 0;
+
+        source.setAttribute("visited", true);
+        source.setAttribute("ui.class", "visited");
+        q.add(source);
+        Tools.pause(delayMs);
+
+        while (head < q.size()) {
+            Node u = q.get(head++);
+
+            // KLUCZOWA ZMIANA: iterujemy po SĄSIADACH u
+            for (Node v : u.neighborNodes().toList()) {   // <— tylko realni sąsiedzi
+                if (!v.hasAttribute("visited")) {
+                    // krawędź drzewa (między u a v); w grafach prostych będzie jedna
+                    Edge e = u.getEdgeBetween(v);
+                    if (e != null) {
+                        e.setAttribute("ui.class", "frontier");
+                    }
+
+                    v.setAttribute("ui.class", "queued");
+                    Tools.pause(delayMs);
+
+                    v.setAttribute("visited", true);
+                    v.setAttribute("ui.class", "visited");
+                    if (e != null) {
+                        e.setAttribute("ui.class", "tree");
+                    }
+                    q.add(v);
+
+                    Tools.pause(delayMs);
+                }
+            }
+        }
+    }
+
+    // importy: Graph, Node, Edge, ArrayDeque, ArrayList
+    public static void dfsEvolution(Graph g, Node source, int delayMs) {
+        // reset
+        for (Node n : g) { n.removeAttribute("visited"); n.removeAttribute("ui.class"); }
+        for (Edge e : g.edges().toList()) e.removeAttribute("ui.class");
+
+        Deque<Node> stack = new ArrayDeque<>();
+        source.setAttribute("visited", true);
+        source.setAttribute("ui.class", "visited");
+        stack.push(source);
+        Tools.pause(delayMs);
+
+        while (!stack.isEmpty()) {
+            Node u = stack.peek();
+            Node next = null; Edge via = null;
+            List<Node> nbrs = new ArrayList<>(u.neighborNodes().toList());
+            Collections.shuffle(nbrs); // losowa kolejność odwiedzania sąsiadów
+
+            for (Node v : nbrs) {
+                if (!v.hasAttribute("visited")) {
+                    next = v;
+                    via = u.getEdgeBetween(v);
+                    break;
+                }
+            }
+            if (next == null) {
+                // backtrack
+                u.setAttribute("ui.class", "backtracked");
+                stack.pop();
+                Tools.pause(delayMs);
+            } else {
+                if (via != null) via.setAttribute("ui.class", "stackEdge");
+                next.setAttribute("ui.class", "stack");
+                Tools.pause(delayMs);
+
+                next.setAttribute("visited", true);
+                next.setAttribute("ui.class", "visited");
+                if (via != null) via.setAttribute("ui.class", "tree");
+                stack.push(next);
+                Tools.pause(delayMs);
+            }
+        }
+    }
+
 }
