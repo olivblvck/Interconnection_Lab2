@@ -1,0 +1,194 @@
+package pl.uni.graphs;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Stack;
+import java.util.Queue;
+import java.util.LinkedList;
+
+import org.graphstream.graph.Graph;
+import org.graphstream.graph.Node;
+import org.graphstream.graph.Edge;
+import org.graphstream.graph.implementations.SingleGraph;
+
+
+/**
+ * Lab 2 algorithms required for submission:
+ *  - Dijkstra (weighted shortest paths)
+ *  - Eccentricities (per node), plus graph Diameter & Radius
+ *  - Eccentricity heatmap (blue→red)
+ *
+ * This class is intentionally minimal and self-contained.
+ */
+public class TraversalAlgorithms {
+
+    /** Holder for diameter & radius. */
+    public static class DR {
+        public final double diameter;
+        public final double radius;
+        public DR(double d, double r) { this.diameter = d; this.radius = r; }
+    }
+
+    /**
+     * Dijkstra using an ArrayList as a priority queue sorted by distance.
+     * Edge weights are read via Tools.weight(e). Distances stored as node attribute "dist".
+     */
+    public static void dijkstra(Graph g, Node source) {
+        // init
+        for (Node v : g) {
+            v.setAttribute("dist", Double.POSITIVE_INFINITY);
+            v.removeAttribute("pred");
+        }
+        source.setAttribute("dist", 0.0);
+
+        ArrayList<Node> pq = new ArrayList<>();
+        pq.add(source);
+
+        while (!pq.isEmpty()) {
+            // extract-min (front of the list)
+            Node u = pq.remove(0);
+
+            Iterator<Node> it = u.neighborNodes().iterator();
+
+            while (it.hasNext()) {
+                Node v = it.next();
+                Edge e = u.getEdgeBetween(v);
+                double alt = u.getNumber("dist") + Tools.weight(e);
+
+                // relaxation
+                if (alt < v.getNumber("dist")) {
+                    v.setAttribute("dist", alt);
+                    v.setAttribute("pred", u.getId());
+
+                    // decrease-key: remove if present, then insert sorted by new distance
+                    pq.remove(v);
+                    int idx = 0;
+                    while (idx < pq.size() && pq.get(idx).getNumber("dist") <= alt) idx++;
+                    pq.add(idx, v);
+                }
+            }
+        }
+    }
+
+    /**
+     * Computes eccentricity for every node using Dijkstra from each source.
+     * Stores per-node "ecc" and graph attributes "diameter" and "radius".
+     */
+    public static DR computeEccentricities(Graph g) {
+        double diameter = Double.NEGATIVE_INFINITY;
+        double radius   = Double.POSITIVE_INFINITY;
+
+        for (Node s : g) {
+            dijkstra(g, s);
+            double ecc = 0.0;
+            for (Node v : g) {
+                double d = v.getNumber("dist");
+                if (d < Double.POSITIVE_INFINITY && d > ecc) ecc = d;
+            }
+            s.setAttribute("ecc", ecc);
+            diameter = Math.max(diameter, ecc);
+            radius   = Math.min(radius,   ecc);
+        }
+
+        g.setAttribute("diameter", diameter);
+        g.setAttribute("radius",   radius);
+        return new DR(diameter, radius);
+    }
+
+    /** Colors nodes blue→red according to eccentricity position between radius and diameter. */
+    public static void applyEccentricityHeatmap(Graph g) {
+        double diameter = g.getNumber("diameter");
+        double radius   = g.getNumber("radius");
+
+        for (Node v : g) {
+            double ecc = v.getNumber("ecc");
+            v.setAttribute("ui.style", colorForEcc(ecc, radius, diameter));
+            v.setAttribute("ui.label", String.format("%s\nEcc=%.2f", v.getId(), ecc));
+        }
+    }
+
+    /** CSS color string for a given eccentricity. */
+    private static String colorForEcc(double ecc, double radius, double diameter) {
+        double t = (diameter > radius) ? (ecc - radius) / (diameter - radius) : 0.0;
+        if (t < 0) t = 0; if (t > 1) t = 1;
+        int r = (int) Math.round(255 * t);
+        int g = 0;
+        int b = (int) Math.round(255 * (1 - t));
+        return String.format("fill-color: rgb(%d,%d,%d); size: 15px;", r, g, b);
+    }
+
+    /** Clears traversal marks/styles used by spanning-tree demos. */
+    public static void resetTraversal(Graph g) {
+        for (Node n : g) {
+            n.removeAttribute("visited");
+            n.removeAttribute("parent");
+        }
+        g.edges().forEach(e -> e.removeAttribute("ui.style"));
+    }
+
+    /**
+     * Spanning tree built by BFS (breadth-first). Edges in the tree are colored red & thicker.
+     * Queue is implemented with ArrayList to stick to the lab’s hint.
+     */
+    /** BFS spanning tree – only new edges (tree edges) are red. */
+    public static void bfsSpanningTree(Graph g, Node start) {
+        resetTraversal(g);
+        Queue<Node> q = new LinkedList<>();
+
+        start.setAttribute("visited", true);
+        q.add(start);
+
+        while (!q.isEmpty()) {
+            Node u = q.poll();
+            for (Node v : u.neighborNodes().toList()) {
+                if (!v.hasAttribute("visited")) {
+                    v.setAttribute("visited", true);
+                    v.setAttribute("parent", u.getId());
+
+                    Edge e = u.getEdgeBetween(v);
+                    if (e != null) e.setAttribute("ui.style", "fill-color: black; size: 3px;");
+
+
+                    q.add(v);
+                }
+            }
+        }
+    }
+
+    /**
+     * Spanning tree built by DFS (depth-first). Edges in the tree are colored red & thicker.
+     * Uses an explicit stack and the “peek + first-unvisited-neighbor” pattern to add tree edges only on discovery.
+     */
+    /** DFS spanning tree – uses stack, marks only discovery edges red. */
+    public static void dfsSpanningTree(Graph g, Node start) {
+        resetTraversal(g);
+        Stack<Node> stack = new Stack<>();
+
+        start.setAttribute("visited", true);
+        stack.push(start);
+
+        while (!stack.isEmpty()) {
+            Node u = stack.peek();
+            Node next = null;
+
+            for (Node v : u.neighborNodes().toList()) {
+                if (!v.hasAttribute("visited")) {
+                    next = v;
+                    break;
+                }
+            }
+
+            if (next != null) {
+                next.setAttribute("visited", true);
+                next.setAttribute("parent", u.getId());
+
+                Edge e = u.getEdgeBetween(next);
+                if (e != null) e.setAttribute("ui.style", "fill-color: red; size: 3px;");
+
+                stack.push(next);
+            } else {
+                stack.pop();
+            }
+        }
+    }
+}
