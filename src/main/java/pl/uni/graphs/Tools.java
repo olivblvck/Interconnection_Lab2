@@ -163,4 +163,39 @@ public class Tools {
             }
         }
     }
+
+    public static void ensureGridLayout(Graph g, double spacing) {
+        boolean hasXY = true;
+        for (Node n : g) {
+            Object[] xy = n.getArray("ui.xy");
+            Object[] xy2 = n.getArray("xy");
+            if (!((xy != null && xy.length >= 2) || (xy2 != null && xy2.length >= 2))) {
+                hasXY = false; break;
+            }
+        }
+        if (hasXY) return;
+
+        boolean hasXYfromXY = true;
+        for (Node n : g) {
+            if (n.hasNumber("x") && n.hasNumber("y")) {
+                n.setAttribute("xy", n.getNumber("x"), n.getNumber("y"));
+            } else {
+                hasXYfromXY = false;
+            }
+        }
+        if (hasXYfromXY) return;
+
+        int V = g.getNodeCount();
+        int N = (int) Math.ceil(Math.sqrt(V));
+        int i = 0;
+        for (Node n : g) {
+            int row = i / N;
+            int col = i % N;
+            double x = col * spacing;
+            double y = row * spacing;
+            n.setAttribute("xy", x, y);
+            i++;
+        }
+    }
+
 }

@@ -93,18 +93,27 @@ public class App {
 
         //wait 4s
         try {
-            Thread.sleep(4000); // 4 sekundy
+            Thread.sleep(4000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
+        /*
         System.out.println("\n--- Exercise 3 on randomgnp_50_0.05.dgs ---");
         Graph g2b = Tools.readGraph("dgs/randomgnp_50_0.05.dgs");
-        g2b.setAttribute("ui.title", "Exercise 3");
-        Viewer v2b = g2b.display();
-        for (Node n : g2a) n.removeAttribute("ui.label");
+        //Graph g2b = Tools.readGraph("dgs/gridvaluated_30_120.dgs"); //for testing only
+        g2b.setAttribute("ui.title", "Exercise 3 (random G(n,p))");
 
+        for (Node n : g2b) n.removeAttribute("ui.label");
+
+        Viewer v2b = g2b.display();
         v2b.setCloseFramePolicy(Viewer.CloseFramePolicy.HIDE_ONLY);
+
+        // KLUCZOWE: zapewnij współrzędne siatkowe
+        Tools.ensureGridLayout(g2b, 1.0);
+
+        // teraz dopiero blokujemy automatyczny layout
+        v2b.disableAutoLayout();
 
         g2b.setAttribute("ui.stylesheet", """
             node { size: 5px; fill-color: #ff4d4d; text-size: 0; }
@@ -119,13 +128,14 @@ public class App {
         Node startB = Tools.pickNodeInLargestComponent(g2b);
         TraversalAlgorithms.dfsEvolution(g2b, startB, 5);
 
+
         //wait 4s
         try {
             Thread.sleep(4000); // 4 sekundy
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
+        */
         // === Exercise 4
         System.out.println("\n--- Exercise 4  ---");
 
