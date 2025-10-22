@@ -14,29 +14,23 @@ import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Utility helpers used across Lab 2.
- */
+//Utility helpers used across Lab 2.
 public class Tools {
-
-    /** Small sleep helper (milliseconds). */
     public static void pause(long ms) {
         try { Thread.sleep(ms); } catch (InterruptedException ignored) {}
     }
 
-    /** Compatibility stub for examples. */
     public static void hitakey(String message) {
         System.out.println(message);
-        // no-op; we don't pause for a keypress in this project
     }
 
-    // Tools.java
     public static int getInt(Node n, String key, int def) {
         if (!n.hasAttribute(key)) return def;
         Object v = n.getAttribute(key);
         if (v instanceof Number) return ((Number) v).intValue();
         try { return Integer.parseInt(String.valueOf(v)); } catch (Exception e) { return def; }
     }
+
     public static int styleByNeighborCostSum(Graph g, int threshold) {
         int marked = 0;
         for (Node v : g) {
@@ -45,7 +39,7 @@ public class Tools {
                 sum += getInt(nb, "cost", 0);
             if (sum > threshold) {
                 v.setAttribute("ui.style", "size: 30px; fill-color: red;");
-                v.setAttribute("ui.label", "sum=" + sum); // optional
+                v.setAttribute("ui.label", "sum=" + sum);
                 marked++;
             }
         }
@@ -53,7 +47,6 @@ public class Tools {
     }
 
     public static double[] getXY(Node v) {
-        // Próbuj w kolejności: "ui.xy" → "xy" → oddzielne "x","y"
         Object[] arr = v.getArray("ui.xy");
         if (arr == null) arr = v.getArray("xy");
         if (arr != null && arr.length >= 2) {
@@ -65,24 +58,21 @@ public class Tools {
         if (v.hasNumber("x") && v.hasNumber("y")) {
             return new double[] { v.getNumber("x"), v.getNumber("y") };
         }
-        return null; // brak współrzędnych
+        return null;
     }
 
     public static Node pickCenterNode(Graph g) {
         double cx = 0, cy = 0; int n = 0;
 
-        // 1) centroid
         for (Node v : g) {
             double[] xy = getXY(v);
             if (xy != null) { cx += xy[0]; cy += xy[1]; n++; }
         }
         if (n == 0) {
-            // Brak współrzędnych w całym grafie → weź środek po indeksie
             return g.getNode(g.getNodeCount()/2);
         }
         cx /= n; cy /= n;
 
-        // 2) najbliższy węzeł do centroidu
         Node best = null; double bestD = Double.POSITIVE_INFINITY;
         for (Node v : g) {
             double[] xy = getXY(v);
@@ -99,7 +89,6 @@ public class Tools {
 
         for (Node s : g) {
             if (globalVisited.contains(s)) continue;
-            // BFS/DFS tej składowej
             ArrayDeque<Node> q = new ArrayDeque<>();
             Set<Node> comp = new HashSet<>();
             q.add(s); comp.add(s);
@@ -115,17 +104,7 @@ public class Tools {
         return bestNode != null ? bestNode : g.getNode(0);
     }
 
-
-
-
-    /**
-     * Load a DGS graph from the classpath.
-     * Example usage: readGraph("dgs/gridvaluated_10_12.dgs")
-     *
-     * Put your .dgs files under src/main/resources/dgs/
-     */
     public static Graph readGraph(String resourcePath) {
-        // Load the DGS file from the classpath as a URL
         var url = Tools.class.getClassLoader().getResource(resourcePath);
         if (url == null) {
             throw new IllegalArgumentException("Resource not found on classpath: " + resourcePath);
@@ -135,7 +114,6 @@ public class Tools {
         FileSource fs = new FileSourceDGS();
         fs.addSink(g);
         try {
-            // GS 2.x: one-shot parse, no begin()/end(), no loops
             fs.readAll(url);
         } catch (Exception e) {
             throw new RuntimeException("Failed to read DGS: " + resourcePath, e);
@@ -145,31 +123,16 @@ public class Tools {
         return g;
     }
 
-
-
-    /** Average degree (undirected). */
     public static double averageDegree(Graph g) {
         double sum = 0.0;
         for (Node n : g) sum += n.getDegree();
         return (g.getNodeCount() == 0) ? 0.0 : sum / g.getNodeCount();
     }
 
-    /** Convenience two-line node label: top line (usually ID) + bottom line (e.g., distance). */
     public static void label(Node n, String top, String bottom) {
         n.setAttribute("ui.label", String.format(Locale.US, "%s\n%s", top, bottom));
     }
 
-    // --- Edge weight helper used by Dijkstra ------------------------------------
-
-    /**
-     * Returns the numeric weight of an edge. If no known attribute is present,
-     * it defaults to 1.0 (unweighted).
-     *
-     * Recognized attribute keys (first match wins):
-     *   "length", "weight", "w", "cost", "value"
-     *
-     * Robust to both numeric attributes and stringified numbers.
-     */
     public static double weight(Edge e) {
         String[] keys = { "length", "weight", "w", "cost", "value" };
         for (String k : keys) {
@@ -178,15 +141,26 @@ public class Tools {
                 if (v instanceof Number) {
                     return ((Number) v).doubleValue();
                 }
-                // Sometimes attributes are stored as strings; try parsing.
                 try {
                     return Double.parseDouble(String.valueOf(v));
                 } catch (Exception ignore) {
-                    // fall through
                 }
             }
         }
-        // Fallback for unweighted graphs
         return 1.0;
+    }
+
+    public static void highlightSPTree(Graph g, String edgeClass) {
+        for (Edge e : g.edges().toList()) e.removeAttribute("ui.class");
+        for (Node n : g) {
+            Object p = n.getAttribute("pred");
+            Node parent = null;
+            if (p instanceof Node) parent = (Node)p;
+            else if (p != null) parent = g.getNode(String.valueOf(p));
+            if (parent != null) {
+                Edge e = n.getEdgeBetween(parent);
+                if (e != null) e.setAttribute("ui.class", edgeClass);
+            }
+        }
     }
 }

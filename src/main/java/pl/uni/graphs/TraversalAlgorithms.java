@@ -19,19 +19,11 @@ import org.graphstream.graph.implementations.SingleGraph;
 
 public class TraversalAlgorithms {
 
-    /** Holder for diameter & radius. */
-    public static class DR {
-        public final double diameter;
-        public final double radius;
-        public DR(double d, double r) { this.diameter = d; this.radius = r; }
+    public static class DR { public final double diameter, radius;
+        public DR(double d, double r){ this.diameter=d; this.radius=r; }
     }
 
-    /**
-     * Dijkstra using an ArrayList as a priority queue sorted by distance.
-     * Edge weights are read via Tools.weight(e). Distances stored as node attribute "dist".
-     */
     public static void dijkstra(Graph g, Node source) {
-        // init
         for (Node v : g) {
             v.setAttribute("dist", Double.POSITIVE_INFINITY);
             v.removeAttribute("pred");
@@ -42,22 +34,17 @@ public class TraversalAlgorithms {
         pq.add(source);
 
         while (!pq.isEmpty()) {
-            // extract-min (front of the list)
             Node u = pq.remove(0);
-
             Iterator<Node> it = u.neighborNodes().iterator();
-
             while (it.hasNext()) {
                 Node v = it.next();
                 Edge e = u.getEdgeBetween(v);
                 double alt = u.getNumber("dist") + Tools.weight(e);
 
-                // relaxation
                 if (alt < v.getNumber("dist")) {
                     v.setAttribute("dist", alt);
                     v.setAttribute("pred", u.getId());
 
-                    // decrease-key: remove if present, then insert sorted by new distance
                     pq.remove(v);
                     int idx = 0;
                     while (idx < pq.size() && pq.get(idx).getNumber("dist") <= alt) idx++;
@@ -67,10 +54,6 @@ public class TraversalAlgorithms {
         }
     }
 
-    /**
-     * Computes eccentricity for every node using Dijkstra from each source.
-     * Stores per-node "ecc" and graph attributes "diameter" and "radius".
-     */
     public static DR computeEccentricities(Graph g) {
         double diameter = Double.NEGATIVE_INFINITY;
         double radius   = Double.POSITIVE_INFINITY;
@@ -92,7 +75,6 @@ public class TraversalAlgorithms {
         return new DR(diameter, radius);
     }
 
-    /** Colors nodes blue→red according to eccentricity position between radius and diameter. */
     public static void applyEccentricityHeatmap(Graph g) {
         double diameter = g.getNumber("diameter");
         double radius   = g.getNumber("radius");
@@ -104,7 +86,6 @@ public class TraversalAlgorithms {
         }
     }
 
-    /** CSS color string for a given eccentricity. */
     private static String colorForEcc(double ecc, double radius, double diameter) {
         double t = (diameter > radius) ? (ecc - radius) / (diameter - radius) : 0.0;
         if (t < 0) t = 0; if (t > 1) t = 1;
@@ -114,7 +95,6 @@ public class TraversalAlgorithms {
         return String.format("fill-color: rgb(%d,%d,%d); size: 15px;", r, g, b);
     }
 
-    /** Clears traversal marks/styles used by spanning-tree demos. */
     public static void resetTraversal(Graph g) {
         for (Node n : g) {
             n.removeAttribute("visited");
@@ -123,11 +103,6 @@ public class TraversalAlgorithms {
         g.edges().forEach(e -> e.removeAttribute("ui.style"));
     }
 
-    /**
-     * Spanning tree built by BFS (breadth-first). Edges in the tree are colored red & thicker.
-     * Queue is implemented with ArrayList to stick to the lab’s hint.
-     */
-    /** BFS spanning tree – only new edges (tree edges) are red. */
     public static void bfsSpanningTree(Graph g, Node start) {
         resetTraversal(g);
         Queue<Node> q = new LinkedList<>();
@@ -152,11 +127,6 @@ public class TraversalAlgorithms {
         }
     }
 
-    /**
-     * Spanning tree built by DFS (depth-first). Edges in the tree are colored red & thicker.
-     * Uses an explicit stack and the “peek + first-unvisited-neighbor” pattern to add tree edges only on discovery.
-     */
-    /** DFS spanning tree – uses stack, marks only discovery edges red. */
     public static void dfsSpanningTree(Graph g, Node start) {
         resetTraversal(g);
         Stack<Node> stack = new Stack<>();
@@ -190,16 +160,14 @@ public class TraversalAlgorithms {
     }
 
     public static void bfsEvolution(Graph g, Node source, int delayMs) {
-        // wyczyść poprzednie oznaczenia
         for (Node n : g) {
             n.removeAttribute("visited");
             n.removeAttribute("ui.class");
         }
-        for (Edge e : g.edges().toList()) {    // <— WSZYSTKIE krawędzie, tylko do resetu
+        for (Edge e : g.edges().toList()) {
             e.removeAttribute("ui.class");
         }
 
-        // kolejka jako ArrayList (zgodnie z poleceniem)
         ArrayList<Node> q = new ArrayList<>();
         int head = 0;
 
@@ -211,10 +179,8 @@ public class TraversalAlgorithms {
         while (head < q.size()) {
             Node u = q.get(head++);
 
-            // KLUCZOWA ZMIANA: iterujemy po SĄSIADACH u
-            for (Node v : u.neighborNodes().toList()) {   // <— tylko realni sąsiedzi
+            for (Node v : u.neighborNodes().toList()) {
                 if (!v.hasAttribute("visited")) {
-                    // krawędź drzewa (między u a v); w grafach prostych będzie jedna
                     Edge e = u.getEdgeBetween(v);
                     if (e != null) {
                         e.setAttribute("ui.class", "frontier");
@@ -236,9 +202,7 @@ public class TraversalAlgorithms {
         }
     }
 
-    // importy: Graph, Node, Edge, ArrayDeque, ArrayList
     public static void dfsEvolution(Graph g, Node source, int delayMs) {
-        // reset
         for (Node n : g) { n.removeAttribute("visited"); n.removeAttribute("ui.class"); }
         for (Edge e : g.edges().toList()) e.removeAttribute("ui.class");
 
@@ -252,7 +216,7 @@ public class TraversalAlgorithms {
             Node u = stack.peek();
             Node next = null; Edge via = null;
             List<Node> nbrs = new ArrayList<>(u.neighborNodes().toList());
-            Collections.shuffle(nbrs); // losowa kolejność odwiedzania sąsiadów
+            Collections.shuffle(nbrs);
 
             for (Node v : nbrs) {
                 if (!v.hasAttribute("visited")) {
@@ -279,5 +243,82 @@ public class TraversalAlgorithms {
             }
         }
     }
+
+    public static int bfsTree(Graph g, Node source) {
+        for (Node n : g) { n.removeAttribute("visited"); n.removeAttribute("pred"); }
+        Deque<Node> q = new ArrayDeque<>();
+        source.setAttribute("visited", true);
+        q.add(source);
+        int treeEdges = 0;
+
+        long seed = 67890L;
+        java.util.Random rng = new java.util.Random(seed);
+
+        while (!q.isEmpty()) {
+            // zbierz całą warstwę (bieżący fron­t)
+            int levelSize = q.size();
+            List<Node> nextFrontier = new ArrayList<>();
+
+            for (int i = 0; i < levelSize; i++) {
+                Node u = q.removeFirst();
+
+                // sąsiedzi w losowej kolejności
+                List<Node> nbrs = new ArrayList<>(u.neighborNodes().toList());
+                java.util.Collections.shuffle(nbrs, rng);
+
+                for (Node v : nbrs) {
+                    if (!v.hasAttribute("visited")) {
+                        v.setAttribute("visited", true);
+                        v.setAttribute("pred", u);
+                        treeEdges++;
+                        nextFrontier.add(v); // dodaj do następnej warstwy
+                    }
+                }
+            }
+
+            // losowa permutacja całej następnej warstwy → „ziarnisty” wygląd
+            java.util.Collections.shuffle(nextFrontier, rng);
+            for (Node v : nextFrontier) q.addLast(v);
+        }
+        return treeEdges;
+    }
+
+    public static int dfsTree(Graph g, Node source) {
+        for (Node n : g) { n.removeAttribute("visited"); n.removeAttribute("pred"); }
+        Deque<Node> stack = new ArrayDeque<>();
+        source.setAttribute("visited", true);
+        stack.push(source);
+        int treeEdges = 0;
+        long seed = 12345L;
+        while (!stack.isEmpty()) {
+            Node u = stack.peek();
+            Node next = null;
+            for (Node v : shuffledNeighbors(u, seed)) {
+                if (!v.hasAttribute("visited")) { next = v; break; }
+            }
+            if (next != null) {
+                next.setAttribute("visited", true);
+                next.setAttribute("pred", u);
+                treeEdges++;
+                stack.push(next);
+            } else {
+                stack.pop();
+            }
+        }
+        return treeEdges;
+    }
+
+    private static List<Node> shuffledNeighbors(Node u, long seed) {
+        List<Node> list = new ArrayList<>(u.neighborNodes().toList());
+        Collections.shuffle(list, new java.util.Random(seed ^ u.getIndex()));
+        return list;
+    }
+
+
+
+
+
+
+
 
 }
