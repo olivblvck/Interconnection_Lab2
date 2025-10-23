@@ -3,7 +3,6 @@
 This project implements and visualizes core graph algorithms using the **GraphStream** library in Java.  
 It corresponds to **Lab 2: Graph Basics** from the *Interconnection: from dynamic graphs to social networks* course.
 
----
 
 ## Project Structure
 
@@ -48,41 +47,27 @@ Interconnection_Lab2/
 | `Tools.java` | Helper functions for graph reading, styling, and coordinate management. |
 | `TraversalAlgorithms.java` | Implements BFS, DFS, Dijkstra, and eccentricity computations. |
 
----
 
-##  Screenshots
+## Screenshots
+
+| Exercise 1 | Exercise 2 |
+|:-----------:|:-----------:|
+| <img src="screenshots/ex1.png" width="350"> | <img src="screenshots/ex2.png" width="350"> |
+| Exercise 3 | Exercise 4 |
+| <img src="screenshots/ex3.png" width="350"> | <img src="screenshots/ex4.png" width="350"> |
+| Exercise 5 (1) | Exercise 5 (2) |
+| <img src="screenshots/ex5-1.png" width="350"> | <img src="screenshots/ex5-2.png" width="350"> |
+| Exercise 6 |  |
+| <img src="screenshots/ex6.png" width="350"> |  |
 
 
-### Exercise 1 – Average Degree
-![ex1](screenshots/ex1.png)
 
-### Exercise 2 – BFS Traversal
-![ex2](screenshots/ex2.png)
+## Lab Instructions
 
-### Exercise 3 – DFS Traversal
-![ex3](screenshots/ex3.png)
+[**Open lab-2-graph-basics.pdf**](lab-2-graph-basics.pdf)
 
-### Exercise 4 – Dijkstra
-![ex4](screenshots/ex4.png)
 
-### Exercise 5 
-![ex5](screenshots/ex5-1.png)
-![ex5](screenshots/ex5-2.png)
-
-### Exercise 6 – BFS vs DFS Spanning Trees
-![ex6-bfs](screenshots/ex6.png)
-
----
-
-## 📄 Lab Instructions
-
-```
-lab-2-graph-basics.pdf
-```
-
----
-
-## 👤 Author
+## Author
 
 Oliwia Witkowska
 
