@@ -5,18 +5,25 @@ import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.Graphs;
 
-
+/**
+ * Main application class executing all Lab 2 exercises sequentially.
+ *
+ * Exercises:
+ * 1. Average degree and node highlighting by neighbor cost sum
+ * 2. Breadth-First Search (BFS) traversal visualization
+ * 3. Depth-First Search (DFS) traversal visualization
+ * 4. Dijkstra shortest paths
+ * 5. Diameter and radius computation with eccentricity heatmap
+ * 6. BFS and DFS spanning trees
+ */
 
 public class App {
 
     public static void main(String[] args) {
+        // Enable graphical mode (GraphStream uses AWT/Swing)
         System.setProperty("java.awt.headless", "false");
         System.setProperty("org.graphstream.ui", "swing");
 
-        String baseCss = """
-            node { size: 5px; text-size: 10; text-alignment: at-right; text-offset: 2px, 0px; }
-            edge { size: 1px; fill-color: #999; }
-        """;
 
         //  Exercise 1
         System.out.println("\n--- Exercise 1 on firstgraphlab2.dgs ---");
@@ -25,9 +32,11 @@ public class App {
         Viewer v0 = g0.display(true);
         v0.setCloseFramePolicy(Viewer.CloseFramePolicy.HIDE_ONLY);
 
+        // Compute and print the average degree of the graph
         double avgDeg = Tools.averageDegree(g0);
         System.out.printf("[g0] Average degree = %.2f%n", avgDeg);
 
+        // Apply visual style and highlight nodes with large neighbor cost sums
         g0.setAttribute("ui.stylesheet", """
             node { size: 8px; fill-color: #aab; text-size: 10; }
             edge { size: 1px; fill-color: #bbb; }
@@ -45,19 +54,22 @@ public class App {
 
         // Exercise 2
         System.out.println("\n--- Exercise 2 ---");
-        Graph g1 = Tools.readGraph("dgs/gridvonneumann_30.dgs"); //using gridvonneumann_30.dgs instead of completegrid_10.gds - couldn't find this file
+        //using gridvonneumann_30.dgs instead of completegrid_10.gds - couldn't find this file
+        Graph g1 = Tools.readGraph("dgs/gridvonneumann_30.dgs");
 
         g1.setAttribute("ui.title", "Exercise 2");
         Viewer v1 = g1.display();
         v1.setCloseFramePolicy(Viewer.CloseFramePolicy.HIDE_ONLY);
-        v1.disableAutoLayout();
+        v1.disableAutoLayout(); // grid graph already contains coordinates
 
+        // Choose center node as BFS starting point
         Node start = Tools.pickCenterNode(g1);
         System.out.println("[g1] start node = " + start.getId() +
                 ", xy=" + java.util.Arrays.toString(Tools.getXY(start)));
 
         start.setAttribute("ui.class", "start");
 
+        // Visual style for traversal evolution
         g1.setAttribute("ui.stylesheet", """
             node { size: 4px; fill-color: #000; }
             node.start { size: 7px; fill-color: #00aa00; stroke-mode: plain; stroke-color: #0a0; stroke-width: 2px; }
@@ -67,6 +79,8 @@ public class App {
             edge.frontier { size: 2px; fill-color: #f90; }
             edge.tree     { size: 2px; fill-color: #f00; }
         """);
+
+        // Perform BFS with visualization delay (15 ms per step)
         TraversalAlgorithms.bfsEvolution(g1, start, 15);
 
         // Exercise 3
@@ -78,7 +92,7 @@ public class App {
         for (Node n : g2a) n.removeAttribute("ui.label");
 
         v2a.setCloseFramePolicy(Viewer.CloseFramePolicy.HIDE_ONLY);
-        v2a.disableAutoLayout();
+        v2a.disableAutoLayout(); // grid coordinates already stored in DGS
         g2a.setAttribute("ui.stylesheet", """
             node { size: 5px; fill-color: #ff4d4d; text-size: 0; }
             node.stack { size: 6px; fill-color: #ffa500; }
@@ -139,6 +153,7 @@ public class App {
         // === Exercise 4
         System.out.println("\n--- Exercise 4  ---");
 
+        // Common CSS for Dijkstra visualization
         String dijkstraCss = """
             graph { padding: 30px; }
             node {
@@ -175,6 +190,7 @@ public class App {
 
         for (var n : g4a) n.removeAttribute("ui.label");
 
+        // Display edge weights as labels
         for (var e : g4a.edges().toList())
             e.setAttribute("ui.label", String.format("%.0f", Tools.weight(e)));
 
@@ -182,8 +198,8 @@ public class App {
         sA.setAttribute("ui.class", "source");
         sA.setAttribute("ui.label", "Source");
 
+        // Run custom Dijkstra algorithm and label each node with its distance
         TraversalAlgorithms.dijkstra(g4a, sA);
-
         for (var n : g4a) {
             double d = n.getNumber("dist");
             if (Double.isFinite(d))
@@ -231,9 +247,11 @@ public class App {
         var v5 = g5.display(false);
         v5.setCloseFramePolicy(org.graphstream.ui.view.Viewer.CloseFramePolicy.HIDE_ONLY);
 
+        // Compute eccentricity for all nodes and derive diameter & radius
         TraversalAlgorithms.DR dr = TraversalAlgorithms.computeEccentricities(g5);
         System.out.printf("[Ex5] diameter=%.2f, radius=%.2f%n", dr.diameter, dr.radius);
 
+        // Prepare heatmap visualization
         for (var n : g5) { n.removeAttribute("ui.label"); n.removeAttribute("ui.style"); n.removeAttribute("ui.class"); }
 
         g5.setAttribute("ui.stylesheet", """
@@ -247,12 +265,6 @@ public class App {
             edge { size: 0px; }
         """);
 
-        //wait 4s
-        try {
-            Thread.sleep(4000); // 4 sekundy
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         TraversalAlgorithms.applyEccentricityHeatmap(g5);
 
         //wait 4s

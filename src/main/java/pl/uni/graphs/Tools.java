@@ -16,14 +16,17 @@ import java.util.Set;
 
 //Utility helpers used across Lab 2.
 public class Tools {
+    //simple sleep helper for visualization delays.
     public static void pause(long ms) {
         try { Thread.sleep(ms); } catch (InterruptedException ignored) {}
     }
 
+    //Prints a message to the console (used as breakpoint).
     public static void hitakey(String message) {
         System.out.println(message);
     }
 
+    //Reads integer attribute from a node with default value if missing.
     public static int getInt(Node n, String key, int def) {
         if (!n.hasAttribute(key)) return def;
         Object v = n.getAttribute(key);
@@ -31,6 +34,7 @@ public class Tools {
         try { return Integer.parseInt(String.valueOf(v)); } catch (Exception e) { return def; }
     }
 
+    //Highlights nodes whose neighbors' cost sum exceeds a given threshold
     public static int styleByNeighborCostSum(Graph g, int threshold) {
         int marked = 0;
         for (Node v : g) {
@@ -46,6 +50,7 @@ public class Tools {
         return marked;
     }
 
+    //Returns XY coordinates of a node if available (ui.xy, xy, or x/y).
     public static double[] getXY(Node v) {
         Object[] arr = v.getArray("ui.xy");
         if (arr == null) arr = v.getArray("xy");
@@ -61,6 +66,7 @@ public class Tools {
         return null;
     }
 
+    //Picks a node located near the geometric center of the graph.
     public static Node pickCenterNode(Graph g) {
         double cx = 0, cy = 0; int n = 0;
 
@@ -83,6 +89,7 @@ public class Tools {
         return best != null ? best : g.getNode(g.getNodeCount()/2);
     }
 
+    //Returns a node from the largest connected component of the graph.
     public static Node pickNodeInLargestComponent(Graph g) {
         Set<Node> globalVisited = new HashSet<>();
         Node bestNode = null; int bestSize = -1;
@@ -104,6 +111,7 @@ public class Tools {
         return bestNode != null ? bestNode : g.getNode(0);
     }
 
+    //Reads a DGS file from resources and returns a GraphStream Graph object.
     public static Graph readGraph(String resourcePath) {
         var url = Tools.class.getClassLoader().getResource(resourcePath);
         if (url == null) {
@@ -123,16 +131,19 @@ public class Tools {
         return g;
     }
 
+    //Computes and returns the average degree of the graph.
     public static double averageDegree(Graph g) {
         double sum = 0.0;
         for (Node n : g) sum += n.getDegree();
         return (g.getNodeCount() == 0) ? 0.0 : sum / g.getNodeCount();
     }
 
+    //Sets a two-line label on a node (top/bottom text)
     public static void label(Node n, String top, String bottom) {
         n.setAttribute("ui.label", String.format(Locale.US, "%s\n%s", top, bottom));
     }
 
+    //Returns edge weight based on possible attribute names.
     public static double weight(Edge e) {
         String[] keys = { "length", "weight", "w", "cost", "value" };
         for (String k : keys) {
@@ -150,6 +161,7 @@ public class Tools {
         return 1.0;
     }
 
+    //Highlights a shortest-path or spanning tree using 'pred' attributes.
     public static void highlightSPTree(Graph g, String edgeClass) {
         for (Edge e : g.edges().toList()) e.removeAttribute("ui.class");
         for (Node n : g) {
@@ -164,7 +176,9 @@ public class Tools {
         }
     }
 
+    //Ensures the graph has xy coordinates (copies or generates grid layout).
     public static void ensureGridLayout(Graph g, double spacing) {
+        // 1) Check if graph already has coordinates
         boolean hasXY = true;
         for (Node n : g) {
             Object[] xy = n.getArray("ui.xy");
@@ -175,6 +189,7 @@ public class Tools {
         }
         if (hasXY) return;
 
+        // 2) Copy x/y → xy if available
         boolean hasXYfromXY = true;
         for (Node n : g) {
             if (n.hasNumber("x") && n.hasNumber("y")) {
@@ -185,6 +200,7 @@ public class Tools {
         }
         if (hasXYfromXY) return;
 
+        // 3) Generate regular grid layout if no coordinates found
         int V = g.getNodeCount();
         int N = (int) Math.ceil(Math.sqrt(V));
         int i = 0;

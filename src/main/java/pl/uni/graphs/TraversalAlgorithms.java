@@ -14,25 +14,29 @@ import java.util.List;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
 import org.graphstream.graph.Edge;
-import org.graphstream.graph.implementations.SingleGraph;
 
-
+//A collection of traversal and shortest-path routines
 public class TraversalAlgorithms {
 
+    // Simple carrier for diameter & radius results.
     public static class DR { public final double diameter, radius;
         public DR(double d, double r){ this.diameter=d; this.radius=r; }
     }
 
+    // Dijkstra shortest path algorithm
     public static void dijkstra(Graph g, Node source) {
+        // Initialize all nodes
         for (Node v : g) {
             v.setAttribute("dist", Double.POSITIVE_INFINITY);
             v.removeAttribute("pred");
         }
         source.setAttribute("dist", 0.0);
 
+        // Priority queue as sorted ArrayList
         ArrayList<Node> pq = new ArrayList<>();
         pq.add(source);
 
+        // Main loop
         while (!pq.isEmpty()) {
             Node u = pq.remove(0);
             Iterator<Node> it = u.neighborNodes().iterator();
@@ -54,6 +58,7 @@ public class TraversalAlgorithms {
         }
     }
 
+    // Compute eccentricity, diameter and radius
     public static DR computeEccentricities(Graph g) {
         double diameter = Double.NEGATIVE_INFINITY;
         double radius   = Double.POSITIVE_INFINITY;
@@ -75,6 +80,7 @@ public class TraversalAlgorithms {
         return new DR(diameter, radius);
     }
 
+    // Apply color map (blue→red) based on eccentricity
     public static void applyEccentricityHeatmap(Graph g) {
         double diameter = g.getNumber("diameter");
         double radius   = g.getNumber("radius");
@@ -86,6 +92,7 @@ public class TraversalAlgorithms {
         }
     }
 
+    // Color helper for heatmap
     private static String colorForEcc(double ecc, double radius, double diameter) {
         double t = (diameter > radius) ? (ecc - radius) / (diameter - radius) : 0.0;
         if (t < 0) t = 0; if (t > 1) t = 1;
@@ -95,6 +102,7 @@ public class TraversalAlgorithms {
         return String.format("fill-color: rgb(%d,%d,%d); size: 15px;", r, g, b);
     }
 
+    // Reset node/edge attributes before new traversal
     public static void resetTraversal(Graph g) {
         for (Node n : g) {
             n.removeAttribute("visited");
@@ -103,6 +111,7 @@ public class TraversalAlgorithms {
         g.edges().forEach(e -> e.removeAttribute("ui.style"));
     }
 
+    // BFS spanning tree (static version)
     public static void bfsSpanningTree(Graph g, Node start) {
         resetTraversal(g);
         Queue<Node> q = new LinkedList<>();
@@ -127,6 +136,7 @@ public class TraversalAlgorithms {
         }
     }
 
+    // DFS spanning tree (static version)
     public static void dfsSpanningTree(Graph g, Node start) {
         resetTraversal(g);
         Stack<Node> stack = new Stack<>();
@@ -159,6 +169,7 @@ public class TraversalAlgorithms {
         }
     }
 
+    // Animated BFS (visual evolution)
     public static void bfsEvolution(Graph g, Node source, int delayMs) {
         for (Node n : g) {
             n.removeAttribute("visited");
@@ -202,6 +213,7 @@ public class TraversalAlgorithms {
         }
     }
 
+    // Animated DFS (visual evolution)
     public static void dfsEvolution(Graph g, Node source, int delayMs) {
         for (Node n : g) { n.removeAttribute("visited"); n.removeAttribute("ui.class"); }
         for (Edge e : g.edges().toList()) e.removeAttribute("ui.class");
@@ -244,6 +256,7 @@ public class TraversalAlgorithms {
         }
     }
 
+    // BFS tree used for Exercise 6 (returns #tree edges)
     public static int bfsTree(Graph g, Node source) {
         for (Node n : g) { n.removeAttribute("visited"); n.removeAttribute("pred"); }
         Deque<Node> q = new ArrayDeque<>();
@@ -283,6 +296,7 @@ public class TraversalAlgorithms {
         return treeEdges;
     }
 
+    // DFS tree used for Exercise 6 (returns #tree edges)
     public static int dfsTree(Graph g, Node source) {
         for (Node n : g) { n.removeAttribute("visited"); n.removeAttribute("pred"); }
         Deque<Node> stack = new ArrayDeque<>();
@@ -308,17 +322,10 @@ public class TraversalAlgorithms {
         return treeEdges;
     }
 
+    // Shuffle neighbors deterministically by mixing seed with node index
     private static List<Node> shuffledNeighbors(Node u, long seed) {
         List<Node> list = new ArrayList<>(u.neighborNodes().toList());
         Collections.shuffle(list, new java.util.Random(seed ^ u.getIndex()));
         return list;
     }
-
-
-
-
-
-
-
-
 }
